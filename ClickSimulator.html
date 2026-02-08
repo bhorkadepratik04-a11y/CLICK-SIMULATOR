@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Click Simulator</title>
+<style>
+body{margin:0;font-family:sans-serif;background:#111;color:white;overflow:hidden}
+button{border:none;border-radius:12px;padding:14px;font-size:16px}
+#loading{position:fixed;inset:0;background:linear-gradient(45deg,#6a11cb,#2575fc);display:flex;justify-content:center;align-items:center;font-size:35px;font-weight:bold;animation:pulse 1s infinite alternate}
+@keyframes pulse{from{opacity:.5}to{opacity:1}}
+.page{display:none;height:100vh;overflow-y:auto;padding-bottom:90px}
+.active{display:block}
+.nav{position:fixed;bottom:0;width:100%;display:flex;background:#222}
+.nav button{flex:1;background:#333;color:white}
+.center{text-align:center}
+.bigBtn{width:200px;height:200px;border-radius:50%;background:orange;font-size:30px;margin-top:20px}
+.stats{display:flex;justify-content:space-around;font-size:22px;margin-top:10px}
+.clickButtons{margin-top:60px}
+.eggGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+.egg{padding:20px;border-radius:12px;text-align:center;font-weight:bold}
+.pet{background:#333;padding:8px;margin:5px;border-radius:8px}
+.equip{background:#4caf50}
+.bin{position:fixed;bottom:90px;right:10px;background:red;width:60px;height:60px;border-radius:50%;font-size:28px}
+.upgrade{background:#2196f3;margin:8px;width:95%}
+.rebirth{background:#9c27b0;margin:8px;width:95%}
+</style>
+</head>
+<body>
+<div id="loading">Click Simulator</div>
+<div id="clickPage" class="page active center">
+<div class="stats">
+<div>Clicks: <span id="clicks">0</span></div>
+<div>Coins: <span id="coins">0</span></div>
+</div>
+<button id="clickBtn" class="bigBtn">TAP</button>
+<div class="clickButtons">
+<button id="convertBtn">Convert Clicks → Coins</button>
+<br><br>
+<button id="autoBtn" disabled>Auto Clicker Locked</button>
+</div>
+</div>
+<div id="shopPage" class="page">
+<h2 class="center">Pet Shop</h2>
+<div id="eggGrid" class="eggGrid"></div>
+</div>
+<div id="invPage" class="page">
+<h2 class="center">Inventory</h2>
+<div id="pets"></div>
+<button id="deletePets" class="bin">🗑</button>
+</div>
+<div id="upgradePage" class="page">
+<h2 class="center">Upgrades</h2>
+<button id="buyAuto" class="upgrade">Auto Clicker 300</button>
+<button id="luckBtn" class="upgrade">Luck Boost</button>
+<button id="invBtn" class="upgrade">Inventory +10</button>
+<button id="clickMultiBtn" class="upgrade">Clicks +5%</button>
+<button id="equipBtn" class="upgrade">+1 Equip Slot</button>
+<h2 class="center">Rebirth</h2>
+<button id="rebirthBtn" class="rebirth">Rebirth</button>
+</div>
+<div class="nav">
+<button onclick="show('clickPage')">Home</button>
+<button onclick="show('shopPage')">Pets</button>
+<button onclick="show('invPage')">Inventory</button>
+<button onclick="show('upgradePage')">Upgrades</button>
+</div>
+<script>
+setTimeout(()=>loading.style.display='none',1500)
+function show(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active')}
+let clicks=0,coins=0,clickMulti=1
+let auto=false,autoBought=false
+let pets=[],equipped=[],maxEquip=3,luck=0,rebirths=0
+function updateUI(){clicksEl.innerText=Math.floor(clicks);coinsEl.innerText=Math.floor(coins)}
+const clicksEl=document.getElementById('clicks')
+const coinsEl=document.getElementById('coins')
+clickBtn.onclick=()=>{let multi=clickMulti;equipped.forEach(p=>multi*=p.multi);clicks+=multi;updateUI()}
+convertBtn.onclick=()=>{let c=Math.floor(clicks/10);if(c>0){coins+=c;clicks-=c*10;updateUI()}}
+setInterval(()=>{if(auto)clickBtn.click()},1000)
+buyAuto.onclick=()=>{if(coins>=300){coins-=300;autoBought=true;autoBtn.disabled=false;updateUI()}}
+autoBtn.onclick=()=>{if(autoBought){auto=!auto;autoBtn.innerText=auto?'Auto ON':'Auto OFF'}}
+const eggs=[['Snow Egg','#bdbdbd',20],['Dirt Egg','brown',300],['Greenland','green',1000],['Water','blue',15000],['Magic','purple',100000],['Shiny','orange',1000000],['Lava','red',20000000],['Godly','gold',150000000],['Divine','pink',1000000000],['Secret','black',100000000000]]
+eggs.forEach(e=>{let d=document.createElement('div');d.className='egg';d.style.background=e[1];d.innerHTML=e[0]+"<br>"+e[2];d.onclick=()=>hatch(e);eggGrid.appendChild(d)})
+const rar=[['Common',50,2],['Rare',20,5],['Epic',10,7],['Legend',2,10],['Mythic',0.5,25]]
+const animals=['🙊','🐿','🦇','🦋','🐲']
+function hatch(e){if(coins<e[2])return alert("Need coins");coins-=e[2];let r=Math.random()*100,sum=0,chosen=rar[0];for(let x of rar){sum+=x[1]+luck;if(r<=sum){chosen=x;break}}let pet={name:e[0]+" "+animals[Math.floor(Math.random()*5)]+" "+chosen[0],multi:chosen[2]};pets.push(pet);renderPets();updateUI();alert("Hatched "+pet.name)}
+function renderPets(){petsDiv.innerHTML='';pets.forEach(p=>{let d=document.createElement('div');d.className='pet'+(equipped.includes(p)?' equip':'');d.innerText=p.name;d.onclick=()=>{if(equipped.includes(p))equipped=equipped.filter(x=>x!=p);else if(equipped.length<maxEquip)equipped.push(p);renderPets()};petsDiv.appendChild(d)})}
+const petsDiv=document.getElementById('pets')
+deletePets.onclick=()=>{pets=pets.filter(p=>!equipped.includes(p));equipped=[];renderPets()}
+let luckCost=1500
+luckBtn.onclick=()=>{if(coins>=luckCost){coins-=luckCost;luck++;luckCost*=3;updateUI()}}
+let invCosts=[10000,100000,1000000,10000000,100000000,1000000000],invLevel=0
+invBtn.onclick=()=>{if(coins>=invCosts[invLevel]){coins-=invCosts[invLevel];invLevel++;updateUI()}}
+let clickCost=1500
+clickMultiBtn.onclick=()=>{if(coins>=clickCost){coins-=clickCost;clickMulti*=1.05;clickCost*=2;updateUI()}}
+let equipCosts=[10000,100000,1000000,10000000,100000000,1000000000],equipLvl=0
+equipBtn.onclick=()=>{if(coins>=equipCosts[equipLvl]){coins-=equipCosts[equipLvl];maxEquip++;equipLvl++;updateUI()}}
+rebirthBtn.onclick=()=>{let can=Math.floor(coins/1000);if(can<1)return alert("Need 1000 coins");rebirths+=can;clickMulti*=1+0.15*can;coins=0;clicks=0;updateUI()}
+</script>
+</body>
+</html>
